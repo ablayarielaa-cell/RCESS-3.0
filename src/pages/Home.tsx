@@ -6,11 +6,6 @@ import { fetchStore } from "@/lib/storeCloud";
 import { Card } from "@/components/ui/card";
 import logo from "@/assets/RCESS.png";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RCESS COUNTDOWN PAGE
-// Neon-console / blueprint grid / glass panels.
-// Automatic countdown closure when the target date and time is reached.
-// ─────────────────────────────────────────────────────────────────────────────
 
 type Ticks = {
   days: string;
@@ -79,16 +74,11 @@ export default function Home() {
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
 
-  // Prevent repeated countdown closure
   const closingRef = useRef(false);
 
-  // Load application settings
   const [store, setStore] = useState(() => loadStore());
-  // Closure is only judged once Supabase has answered; a stale local flag from a
-  // previous visit must not lock the portal before the real settings arrive.
   const [settingsReady, setSettingsReady] = useState(false);
 
-  // Supabase holds the real settings; localStorage only covers the first paint.
   useEffect(() => {
     let cancelled = false;
 
@@ -99,7 +89,6 @@ export default function Home() {
         saveStore(cloud);
       })
       .catch(() => {
-        // Unreachable Supabase: keep showing this browser's cached settings.
       })
       .finally(() => {
         if (!cancelled) setSettingsReady(true);
@@ -110,11 +99,7 @@ export default function Home() {
     };
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // SECRET LOGO ACCESS
-  // Triple-click the logo to open the login page.
-  // ─────────────────────────────────────────────────────────────────────────
-
+  
   function onLogoClick() {
     clickCountRef.current += 1;
 
@@ -139,10 +124,7 @@ export default function Home() {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // SYNCHRONIZE SETTINGS BETWEEN TABS
-  // ─────────────────────────────────────────────────────────────────────────
-
+  
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key === "rcess.portal.store.v1") {
@@ -157,10 +139,7 @@ export default function Home() {
     };
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // COUNTDOWN TARGET
-  // ─────────────────────────────────────────────────────────────────────────
-
+  
   const target = useMemo(
     () => new Date(store.settings.countdownIso),
     [store.settings.countdownIso]
@@ -170,21 +149,10 @@ export default function Home() {
     computeTicks(target)
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // AUTOMATIC COUNTDOWN CLOSURE
-  //
-  // When the target time is reached:
-  // 1. Display 0 days, 00 hours, 00 minutes, 00 seconds.
-  // 2. Set countdownClosed to true in localStorage.
-  // 3. Redirect to /login.
-  // ─────────────────────────────────────────────────────────────────────────
-
+  
   useEffect(() => {
-    // Hold the closure decision until Supabase has answered.
     if (!settingsReady) return;
 
-    // If an administrator has already closed the countdown,
-    // redirect immediately to the login page.
     if (store.settings.countdownClosed) {
       navigate("/login");
       return;
@@ -197,7 +165,6 @@ export default function Home() {
 
       closingRef.current = true;
 
-      // Show zero before redirecting.
       setTicks({
         days: "0",
         hours: "00",
@@ -205,7 +172,6 @@ export default function Home() {
         seconds: "00",
       });
 
-      // Persist the closed state.
       try {
         const storageKey = "rcess.portal.store.v1";
         const raw = localStorage.getItem(storageKey);
@@ -234,14 +200,12 @@ export default function Home() {
         );
       }
 
-      // Redirect to the login page.
       navigate("/login");
     };
 
     const updateCountdown = () => {
       const remaining = target.getTime() - Date.now();
 
-      // Invalid countdown date: stop displaying a running countdown.
       if (!Number.isFinite(target.getTime())) {
         setTicks({
           days: "0",
@@ -252,7 +216,6 @@ export default function Home() {
         return;
       }
 
-      // Automatically close when the target time is reached.
       if (remaining <= 0) {
         closeCountdown();
         return;
@@ -261,10 +224,8 @@ export default function Home() {
       setTicks(computeTicks(target));
     };
 
-    // Check immediately when the component mounts.
     updateCountdown();
 
-    // Keep the countdown updated.
     const intervalId = window.setInterval(
       updateCountdown,
       250
@@ -280,10 +241,7 @@ export default function Home() {
     target,
   ]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // PAGE UI
-  // ─────────────────────────────────────────────────────────────────────────
-
+  
   return (
     <div
       className="relative min-h-screen overflow-hidden bg-[#030530] text-white"
@@ -342,18 +300,15 @@ export default function Home() {
               </div>
 
               <div className="mt-1 text-3xl font-semibold tracking-tight">
-                RCESS
-              </div>
-
-              <div className="mt-0.5 text-sm text-white/55">
                 Regional Civil Engineering Students Summit
               </div>
+
             </div>
           </div>
 
           <div className="hidden sm:block text-right">
             <div className="text-[11px] tracking-[0.45em] text-orange-200/80">
-              COUNTDOWN • GENERAL ACCESS
+              COUNTDOWN
             </div>
           </div>
         </div>

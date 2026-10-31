@@ -8,9 +8,6 @@ import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 
-// Use hash-based routing (/#/) to support opening index.html directly via file:// protocol
-// Tolerant routing: unmatched paths are treated as anchor sections (e.g., /#/services → scroll to #services)
-// For in-page anchors, use <Link href="/section"> instead of <a href="#section">
 function AppRouter() {
   return (
     <Router hook={useHashLocation}>
@@ -23,10 +20,6 @@ function AppRouter() {
   );
 }
 
-// Note on theming:
-// - Choose defaultTheme based on your design (light or dark background)
-// - Update the color palette in index.css to match
-// - If you want switchable themes, add `switchable` prop and use `useTheme` hook
 
 function App() {
   return (

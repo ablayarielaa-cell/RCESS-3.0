@@ -4,7 +4,6 @@ import type { ComponentType } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Type compatibility aliases for React Leaflet props in this project.
 const LeafletMapContainer = MapContainer as unknown as ComponentType<any>;
 const LeafletTileLayer = TileLayer as unknown as ComponentType<any>;
 const LeafletMarker = Marker as unknown as ComponentType<any>;
@@ -126,16 +125,9 @@ import type {
   Store,
 } from "@/lib/store";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VISUAL DIRECTION (match Home):
-// Neon-console / blueprint grid / glass panels.
-// Dashboard layout, tabs bar, and content card mimic screenshot.
-// ─────────────────────────────────────────────────────────────────────────────
 
-// News is a long admin-maintained list, so it is chunked the same way the feed is.
 const NEWS_PAGE_SIZE = 30;
 
-// Tabs the guided tour walks through, in the order they appear in the navigation.
 const TOUR_TAB_KEYS = ["news", "feed", "summit", "leaderboard", "bracketing", "schedule", "map", "evaluation", "settings"];
 
 function formatPosted(iso: string) {
@@ -144,7 +136,6 @@ function formatPosted(iso: string) {
   return d.toLocaleString();
 }
 
-// Only shown to admins: explains why a post they can see is not visible to viewers.
 function scheduleWindowBadge(post: MatchSchedulePost, now: Date): string | null {
   const from = post.visibleFromIso ? new Date(post.visibleFromIso) : null;
   const to = post.visibleToIso ? new Date(post.visibleToIso) : null;
@@ -156,9 +147,6 @@ function scheduleWindowBadge(post: MatchSchedulePost, now: Date): string | null 
   return `Showing since ${formatPosted(post.visibleFromIso)}`;
 }
 
-// Search saved emergency contact fields for every phone number already entered. One
-// hotline contact may carry several numbers, so results are kept in the order found and
-// de-duplicated by their dialable digits instead of their punctuation.
 function extractEmergencyPhoneNumbers(item: Partial<SummitInfo>): string[] {
   const values = [item.title, item.subtitle, item.venue, item.dateLabel, item.notes]
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
@@ -182,8 +170,6 @@ function extractEmergencyPhoneNumbers(item: Partial<SummitInfo>): string[] {
     for (const match of source.matchAll(pattern)) collect(match[0]);
   }
 
-  // Short service numbers have too few digits for the patterns above, so respect one
-  // only when it was saved on its own contact line rather than assuming a default.
   for (const line of (item.venue ?? "").split(/[\n,;]+/)) {
     if (/^(?:911|112|117|999)$/.test(line.trim())) collect(line);
   }
@@ -198,7 +184,6 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
       return true;
     }
   } catch {
-    // Fall back to a temporary text field for browsers without clipboard access.
   }
 
   try {
@@ -232,7 +217,7 @@ function PortalHeader() {
         </div>
         <div>
           <div className="text-[11px] tracking-[0.45em] text-cyan-300/80">PARSU • RCESS</div>
-          <div className="mt-1 text-3xl font-semibold tracking-tight">RCESS</div>
+          <div className="mt-1 text-3xl font-semibold tracking-tight">Regional Civil Engineering Student Summit</div>
           <div className="mt-0.5 text-sm text-white/55">Dashboard</div>
         </div>
       </div>
@@ -367,8 +352,6 @@ function FeedComposer({
   const [caption, setCaption] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  // Object URLs live as long as the album does; the ref lets one cleanup on unmount
-  // revoke them without touching the ones still shown after a second pick.
   const previewsRef = useRef<string[]>([]);
   const setAlbumPreviews = (next: string[]) => {
     previewsRef.current = next;
@@ -380,8 +363,6 @@ function FeedComposer({
     [],
   );
 
-  // Each pick adds to the album, so a viewer can gather several batches of pictures
-  // into the one post instead of losing the first pick.
   function addFiles(incoming: File[]) {
     if (!incoming.length) return;
 
@@ -445,7 +426,6 @@ function FeedComposer({
           className="block w-full text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-300 file:px-4 file:py-2 file:text-black file:hover:bg-cyan-200"
           onChange={(event) => {
             addFiles(Array.from(event.target.files ?? []));
-            // Let the same file be picked again after it was removed.
             event.target.value = "";
           }}
         />
@@ -514,7 +494,6 @@ function FeedComposer({
   );
 }
 
-// Deleting a post cannot be undone, so the first click only arms the second one.
 function FeedDeleteButton({
   post,
   label,
@@ -782,9 +761,6 @@ function ScheduleEditor({ onSave }: { onSave: (p: MatchSchedulePost) => void }) 
   );
 }
 
-// The admin-authored catalogue. Order is meaning: the first placement of an
-// event is the champion, which is how a finished bracket is paid out, so rows
-// can be moved up and down as well as edited.
 function EventsEditor({
   value,
   focusId,
@@ -797,7 +773,6 @@ function EventsEditor({
   const [categories, setCategories] = useState<EventCategory[]>(() =>
     value.length ? value : [{ id: nanoId(), name: "", events: [] }],
   );
-  // One category is on screen at a time, so editing Sports never lists Academics.
   const [activeId, setActiveId] = useState<string>(() => focusId ?? value[0]?.id ?? "");
 
   const active = categories.find((category) => category.id === activeId) ?? categories[0] ?? null;
@@ -873,8 +848,6 @@ function EventsEditor({
       categoryNames.add(key);
     }
 
-    // Brackets and scores name an event with one string, so the same name cannot
-    // live in two categories.
     const eventNames = new Set<string>();
     for (const category of clean) {
       for (const event of category.events) {
@@ -1126,8 +1099,6 @@ function EventsEditor({
 
 function SummitEditor({ value, onSave, onDelete }: { value: SummitInfo; onSave: (v: SummitInfo) => void; onDelete?: () => void }) {
   const [draft, setDraft] = useState<SummitInfo>(value);
-  // One hotline contact can carry several numbers; they are edited as a list and saved
-  // back into the single contact field, one number per line.
   const [numbers, setNumbers] = useState<string[]>(() => {
     const found = extractEmergencyPhoneNumbers(value);
     return found.length ? found : [""];
@@ -1271,7 +1242,6 @@ type MapLocation = {
 };
 type MultiMapInfo = MapInfo & { locations?: MapLocation[] };
 
-// Opens the map editor already focused on a brand new location.
 const NEW_LOCATION_ID = "__new";
 
 const mapPinIcon = new L.Icon({
@@ -1284,7 +1254,6 @@ const mapPinIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// The venue a schedule post pointed at, marked apart from the rest of the pins.
 const mapFocusPinIcon = new L.DivIcon({
   className: "",
   html: '<span style="display:block;width:20px;height:20px;border-radius:9999px;background:#67e8f9;border:2px solid #050820;box-shadow:0 0 0 6px rgba(103,232,249,.25),0 0 20px 8px rgba(103,232,249,.45)"></span>',
@@ -1306,8 +1275,6 @@ function FitLocations({ locations }: { locations: MapLocation[] }) {
   return null;
 }
 
-// A schedule post types its venue as free text, so it is matched against a saved pin by
-// comparing the venue with the pin's name and address in both directions.
 function schedulePinFor(locations: MapLocation[], place: string): MapLocation | null {
   const needle = place.trim().toLowerCase();
   if (!needle) return null;
@@ -1333,7 +1300,6 @@ function schedulePinFor(locations: MapLocation[], place: string): MapLocation | 
   return best;
 }
 
-// Zooms past the group fit onto the venue the viewer tapped in the schedule.
 function MapFocus({ location }: { location: MapLocation }) {
   const map = useMap();
   const lat = location.lat;
@@ -1341,8 +1307,6 @@ function MapFocus({ location }: { location: MapLocation }) {
 
   useEffect(() => {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    // The tab panel is still settling when this runs, so the map has to re-read its own
-    // size or the venue lands off-centre.
     map.invalidateSize();
     map.setView([lat!, lng!], 16);
   }, [lat, lng, map]);
@@ -1395,7 +1359,6 @@ function MapEditor({
   onSave: (v: MapInfo) => void;
 }) {
   const existing = ((value as MultiMapInfo).locations ?? []) as MapLocation[];
-  // One location per dialog. Editing an existing pin arrives here through Manage locations.
   const original = focusId && focusId !== NEW_LOCATION_ID
     ? existing.find((location) => location.id === focusId) ?? null
     : null;
@@ -1416,8 +1379,6 @@ function MapEditor({
     }
     setIsSaving(true);
     try {
-      // Resolve the address to coordinates so the pin can be placed on the map.
-      // Coordinates already saved are kept to avoid a needless geocoding request.
       let resolved: MapLocation = { ...location, name, address };
       if (!(Number.isFinite(location.lat) && Number.isFinite(location.lng))) {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`, {
@@ -1605,24 +1566,16 @@ function BracketEditor({
 }
 
 
-/**
- * Rebuild winner propagation through every round of a single-elimination bracket.
- * This keeps semifinal/final team slots in sync after scores or manual advances
- * are changed, and clears stale downstream winners when an upstream team changes.
- */
+
 function propagateBracketRounds(rounds: any[], mode: "auto" | "manual") {
   for (let roundIndex = 0; roundIndex < rounds.length; roundIndex += 1) {
     const round = rounds[roundIndex];
     if (!round?.matches) continue;
 
-    // Decide the winner for each match before advancing winners to the next round.
     for (const match of round.matches) {
       const hasA = Boolean(match.a?.team);
       const hasB = Boolean(match.b?.team);
 
-      // Do not auto-advance a partially populated semifinal/final: the other
-      // quarter-final may simply not have been decided yet. A match only has
-      // a winner once both slots have teams, then Auto/Manual mode applies.
       if (!hasA || !hasB) {
         match.winner = undefined;
       } else if (mode === "auto") {
@@ -1632,7 +1585,6 @@ function propagateBracketRounds(rounds: any[], mode: "auto" | "manual") {
           scoreB !== null && scoreB !== undefined && scoreB !== "" &&
           Number.isFinite(Number(scoreA)) && Number.isFinite(Number(scoreB));
 
-        // In automatic mode, require two valid, non-tied scores.
         if (!validScores || Number(scoreA) === Number(scoreB)) {
           match.winner = undefined;
         } else {
@@ -1646,8 +1598,6 @@ function propagateBracketRounds(rounds: any[], mode: "auto" | "manual") {
     const nextRound = rounds[roundIndex + 1];
     if (!nextRound?.matches) continue;
 
-    // Each pair of matches feeds the next match: first match -> side A,
-    // second match -> side B. This repeats for semifinal -> final as well.
     round.matches.forEach((match: any, matchIndex: number) => {
       const nextMatch = nextRound.matches[Math.floor(matchIndex / 2)];
       if (!nextMatch) return;
@@ -1656,8 +1606,6 @@ function propagateBracketRounds(rounds: any[], mode: "auto" | "manual") {
       const advancedTeam = match.winner ? (match[match.winner]?.team ?? undefined) : undefined;
       const destination = nextMatch[destinationSide];
 
-      // If the incoming team changed, the old semifinal/final score and winner
-      // are no longer valid, so clear them before continuing to later rounds.
       if (destination.team !== advancedTeam) {
         destination.team = advancedTeam;
         destination.score = null;
@@ -1669,8 +1617,6 @@ function propagateBracketRounds(rounds: any[], mode: "auto" | "manual") {
 
 
 function describeSyncError(error: unknown): string {
-  // supabase-js reports a query failure as a plain { message } object, not an
-  // Error, so the reason must be read without assuming a class.
   const message =
     typeof (error as { message?: unknown } | null)?.message === "string"
       ? (error as { message: string }).message
@@ -1693,16 +1639,12 @@ export default function Dashboard() {
   const isReadOnly = isViewer || isGuest;
 
   const [store, setStore] = useState<Store>(() => loadStore());
-  // The last state known to be in Supabase. Writes are diffed against it so a
-  // module the current role cannot edit is never sent.
   const cloudBaselineRef = useRef<Store | null>(null);
   const pendingPushRef = useRef<Store | null>(null);
   const isPushingRef = useRef(false);
   const [isPushing, setIsPushing] = useState(false);
   const [pullError, setPullError] = useState("");
   const [pushError, setPushError] = useState("");
-  // True once a Settings push reaches a project without the events column, which
-  // means the event catalogue is saved on this browser only.
   const [eventsLocalOnly, setEventsLocalOnly] = useState(false);
   const [isEventsEditorOpen, setEventsEditorOpen] = useState(false);
   const [eventsEditorFocus, setEventsEditorFocus] = useState<string | null>(null);
@@ -1726,14 +1668,10 @@ export default function Dashboard() {
   const [feedConfirmId, setFeedConfirmId] = useState<string | null>(null);
   const [isFeedDeleting, setIsFeedDeleting] = useState(false);
   const [newsLimit, setNewsLimit] = useState(NEWS_PAGE_SIZE);
-  // The schedule post a viewer tapped, kept so the map can point at its venue.
   const [schedulePlace, setSchedulePlace] = useState<{ id: string; title: string; place: string } | null>(null);
   const [geocodedPlace, setGeocodedPlace] = useState<MapLocation | null>(null);
   const [mapPlaceNotice, setMapPlaceNotice] = useState("");
-  // Profile: the picture this account uploaded, plus the posts it has made.
   const [avatarPath, setAvatarPath] = useState("");
-  // The uploaded object keeps one name, so a version number is what makes the
-  // browser show the new picture instead of the cached one.
   const [avatarStamp, setAvatarStamp] = useState(0);
   const [isAvatarBusy, setIsAvatarBusy] = useState(false);
   const [myPosts, setMyPosts] = useState<FeedPost[]>([]);
@@ -1752,8 +1690,6 @@ export default function Dashboard() {
     try {
       await deleteFeedPost(post);
       setFeed((prev) => prev.filter((p) => p.id !== post.id));
-      // Only the account that made the post loses one from its own list, so an
-      // admin deleting someone else's picture leaves that count alone.
       if (session.username && post.postedBy === session.username) {
         setMyPosts((prev) => prev.filter((p) => p.id !== post.id));
         setMyPostsTotal((total) => Math.max(0, total - 1));
@@ -1856,41 +1792,32 @@ export default function Dashboard() {
     tipLeft: number;
   } | null>(null);
 
-  // The guide walks every view this role can actually reach, so the last couple
-  // of steps differ: Settings only exists for administrators, and the account
-  // views only exist once somebody is signed in.
   const viewerTourSteps = useMemo(() => {
     const steps = [
-      { target: "navigation", tab: "news", title: "Portal Navigation", description: "Use the navigation to move through News, Emergency Hotline, Leaderboard, Bracketing, Schedule, Map, and Evaluation. Account — Profile, Change password and Logout — sits beside it, and administrators are also given Settings. On Android or a small screen, these sections are inside the Menu. I’ll highlight each section in the next steps." },
-      { target: "news", tab: "news", title: "News and Announcements", description: "Read the latest announcements, updates, and reminders here. Viewer accounts can read posts but cannot edit or delete them." },
-      { target: "feed", tab: "feed", title: "News Feed", description: "The feed is where the event is shared as it happens. The newest 30 posts load at a time — use Load the next 30 posts for older ones, and Refresh to pull in anything posted while you were here." },
+      { target: "navigation", tab: "news", title: "Portal Navigation", description: "Use the navigation to move through News, Emergency Hotline, Leaderboard, Bracketing, Schedule, Map, Evaluation, and Settings." },
+      { target: "news", tab: "news", title: "News and Announcements", description: "Read the latest announcements, updates, and reminders here." },
+      { target: "feed", tab: "feed", title: "News Feed", description: "The feed is where the event is shared as it happens." },
       { target: "feed-add", tab: "feed", title: "Posting to the feed", description: "Select Add post. One post can carry up to 10 pictures: pick them all at once, or add more in a second pick and remove any you change your mind about. A caption on its own is allowed too." },
-      { target: "feed-post", tab: "feed", title: "Opening a post", description: "Tap a picture or a caption to open the post full size and read who posted it. If the post is yours, this opened view is where you delete it." },
-      { target: "feed-post", tab: "feed", title: "Deleting and downloading", description: "You delete your own posts from the opened post. An administrator can delete any post straight from the list without opening it, and only administrators see the Download buttons." },
       { target: "summit", tab: "summit", title: "Emergency Hotline", description: "Find emergency service contacts here. Tap a phone number to call it when your device supports phone links. Scroll down if there are multiple hotline contacts." },
-      { target: "leaderboard", tab: "leaderboard", title: "Leaderboard", description: "Check team standings and points. Use the score-view dropdown to switch between the overall scoreboard and each event, add a row by hand, or press Apply points from brackets to pay out every finished bracket using its award table." },
-      { target: "bracketing", tab: "bracketing", title: "Bracketing", description: "Follow the tournament bracket and see how teams progress through the rounds. Filter it by event, and read the points each placement is worth under the bracket's name — those come from the events defined in Settings." },
-      { target: "schedule", tab: "schedule", title: "Schedule", description: "Review the matches for the current event day — the time reads exactly as the organisers typed it, so it can cover one hour or the whole day, along with where it is held. Only the posts due to appear right now are listed for viewers, while editors also see the days still queued. Tap a post to open the map at its venue." },
-      { target: "map", tab: "map", title: "Map", description: "View the venue or location information provided by the organizers. You can use the embedded map to explore the location." },
-      { target: "evaluation", tab: "evaluation", title: "Evaluation", description: "This section is reserved for evaluation tools and information. It may show limited content if the feature has not been enabled yet." },
+      { target: "leaderboard", tab: "leaderboard", title: "Leaderboard", description: "Check team standings and points. Use the score-view dropdown to switch between the overall scoreboard and each event." },
+      { target: "bracketing", tab: "bracketing", title: "Bracketing", description: "Follow the tournament bracket and see how teams progress through the rounds." },
+      { target: "schedule", tab: "schedule", title: "Schedule", description: "Review the schedule for the current event day." },
+      { target: "map", tab: "map", title: "Map", description: "View the venue or location information provided by the organizers." },
+      { target: "evaluation", tab: "evaluation", title: "Evaluation", description: "This section is reserved for evaluating the whole RCESS event." },
     ];
 
     if (isAdmin) {
       steps.push({ target: "settings", tab: "settings", title: "Settings", description: "Settings is the administrator view. Set the countdown date, choose which roles may edit each section, and turn this guide on or off for everyone. Changes only reach other devices after you press Save settings." });
-      steps.push({ target: "events", tab: "settings", title: "Events and points", description: "Everything else reads this list. Each category has its own Edit button, so opening Sports shows only the Sports events — Basketball, Volleyball — and never Academics or Special. Use Add category for a new group and Add event inside the one you have open. Every event gets its own award table: champion, runner-up and any placement you add, plus the points for entering and for not entering. Saving here updates Bracketing and the Leaderboard at once, and renaming an event carries its brackets and scores over." });
     }
 
     if (role !== "guest") {
-      steps.push({ target: "profile", tab: "profile", title: "Account · Profile", description: "Profile sits in the Account group rather than in the section tabs. Upload a picture — it is cropped to a square and saved against your username — or remove it again. Everything you posted is listed underneath, 30 at a time." });
-      steps.push({ target: "profile-post", tab: "profile", title: "Account · Post from Profile", description: "Add post at the top of My posts does the same thing as Add post in News Feed: choose up to 10 pictures, write a caption, or post text alone. It is one shared post — it appears here under your name and in News Feed for everyone else, and the two lists refresh themselves as soon as you post." });
+      steps.push({ target: "profile", tab: "profile", title: "Account · Profile", description: "Profile where you can view your posted news feeds or upload a new post." });
       steps.push({ target: "password", tab: "password", title: "Account · Change password", description: "Change password is separate from Profile. Enter the password you were given first, then the new one twice — at least 6 characters. Your next sign-in uses the new password, so make a note of it." });
     }
 
     return steps;
   }, [isAdmin, role]);
 
-  // Keep the mobile navigation drawer pinned open during every tutorial step
-  // after the intro. The intro (step 0) intentionally highlights the closed Menu button.
   const mobileTutorialMenuMustStayOpen =
     viewerTourOpen &&
     viewerTourStep > 0 &&
@@ -1960,8 +1887,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // The feed lives outside the store blob, so it loads each time the tab is
-    // opened — that is how a viewer sees pictures someone else just posted.
     if (tab !== "feed" || isGuest) return;
 
     let cancelled = false;
@@ -2034,7 +1959,6 @@ export default function Dashboard() {
   }, [isGuest, myPostsLimit, myPostsTick, session.username, tab]);
 
   useEffect(() => {
-    // Results are read per visit, and again every 20s for the admin.
     if (tab !== "evaluation" || isGuest) return;
 
     let cancelled = false;
@@ -2065,7 +1989,6 @@ export default function Dashboard() {
     return () => window.clearInterval(id);
   }, [tab, isAdmin]);
 
-  // Scheduled posts flip on their own once their window starts or ends.
   useEffect(() => {
     if (tab !== "schedule") return;
     setScheduleNow(Date.now());
@@ -2073,7 +1996,6 @@ export default function Dashboard() {
     return () => window.clearInterval(id);
   }, [tab]);
 
-  // Pins for the map tab, plus the one the viewer jumped to from the schedule.
   const mapPins = useMemo(
     () =>
       ((store.map as MultiMapInfo).locations ?? []).filter(
@@ -2091,13 +2013,11 @@ export default function Dashboard() {
     [mapPins, focusPin],
   );
 
-  // A schedule post points at a place, so tapping it hands the viewer to the map.
   const jumpToMatch = (post: MatchSchedulePost) => {
     setSchedulePlace({ id: post.id, title: post.title, place: post.location });
     setTab("map");
   };
 
-  // Leaving the map drops the jump, so the next visit shows every pin again.
   useEffect(() => {
     if (tab !== "map") {
       setSchedulePlace(null);
@@ -2106,8 +2026,6 @@ export default function Dashboard() {
     }
   }, [tab]);
 
-  // A venue that no admin has pinned yet is looked up once, the same way the map
-  // editor resolves addresses.
   useEffect(() => {
     if (!schedulePlace || tab !== "map") return;
 
@@ -2159,16 +2077,12 @@ export default function Dashboard() {
   }, [schedulePlace, savedFocusPin, tab]);
 
   useEffect(() => {
-    // Nobody has signed in and nobody chose guest mode.
     if (session.role === "guest" && !session.username) {
       navigate("/login");
     }
   }, [navigate, session.role, session.username]);
 
   useEffect(() => {
-    // Clamp current tab to what this role is allowed to see. Profile and Change
-    // password are reached from the account group rather than the tab bar, so
-    // they are allowed for any signed-in role instead of being looked up there.
     const isAccountView = tab === "profile" || tab === "password";
 
     if (isAccountView ? role === "guest" : !navItems.some((i) => i.k === tab)) {
@@ -2176,9 +2090,6 @@ export default function Dashboard() {
     }
   }, [navItems, role, tab]);
 
-  // Guide every signed-in account through the first visit, not just viewers —
-  // staff, sports and administrators reach the same sections plus their own.
-  // The enabled/disabled switch is stored in this browser's local storage.
   useEffect(() => {
     if (isGuest || !session.username || !viewerTutorialEnabled) return;
     const completedKey = `rcess-viewer-tour-complete:${(session.username ?? "viewer").toLowerCase()}`;
@@ -2189,16 +2100,12 @@ export default function Dashboard() {
         setViewerTourOpen(true);
       }
     } catch {
-      // If localStorage is unavailable, still show the tour for this session.
       setTab("news");
       setViewerTourStep(0);
       setViewerTourOpen(true);
     }
   }, [isGuest, session.username, viewerTutorialEnabled]);
 
-  // Keep the tour focus around navigation as the tour changes tabs.
-  // The first mobile step highlights the Menu dropdown; later mobile steps open
-  // the drawer and highlight the matching menu item. Desktop highlights the tabs.
   useEffect(() => {
     if (!viewerTourOpen) {
       setViewerTourRect(null);
@@ -2210,15 +2117,11 @@ export default function Dashboard() {
     setTab(step.tab);
 
     const isMobileViewport = window.innerWidth < 1024;
-    // On mobile, the first guide highlights the closed Menu dropdown itself.
-    // Later steps open the drawer so each matching menu item can be highlighted.
     const isMobileDropdownIntro = isMobileViewport && step.target === "navigation";
     setMobileNavOpen(isMobileViewport && !isMobileDropdownIntro);
 
     const timer = window.setTimeout(() => {
       const navigationKeys = TOUR_TAB_KEYS;
-      // On desktop, the intro highlights the whole horizontal navigation.
-      // On mobile, it highlights only the Menu dropdown button.
       const isNavigationRange = step.target === "navigation" && !isMobileViewport;
       const visible = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
@@ -2238,8 +2141,6 @@ export default function Dashboard() {
         ? desktopNavigationTargets
         : mobileNavigationTargets.filter(visible);
 
-      // On mobile, prioritize the matching item inside the opened Menu drawer.
-      // The section heading is only a fallback if the navigation target is unavailable.
       const mobileDropdownTarget = isMobileDropdownIntro
         ? document.querySelector('[data-tour-target="mobile-menu-toggle"]') as HTMLElement | null
         : null;
@@ -2294,9 +2195,6 @@ export default function Dashboard() {
     return () => window.clearTimeout(timer);
   }, [viewerTourOpen, viewerTourStep, viewerTourSteps]);
 
-  // Advance the tutorial itself; viewers do not need to tap the highlighted
-  // navigation item. On mobile, open the Menu drawer for each section step and
-  // close it again when returning to the introductory Menu-button step.
   function moveViewerTourToStep(nextStepIndex: number) {
     const nextStep = viewerTourSteps[nextStepIndex];
     if (!nextStep) return;
@@ -2312,8 +2210,6 @@ export default function Dashboard() {
     requestPush(next);
   }
 
-  // Pushes run one at a time against the last snapshot known to be in Supabase,
-  // so a fast editor never sends an older state after a newer one.
   function requestPush(next: Store) {
     pendingPushRef.current = next;
     if (isPushingRef.current) return;
@@ -2335,7 +2231,6 @@ export default function Dashboard() {
           setPushError("");
           setEventsLocalOnly(!result.eventsStoredInCloud);
         } catch (error) {
-          // The baseline is untouched, so the same diff is retried on the next save.
           setPushError(describeSyncError(error));
           toast.error(describeSyncError(error));
         }
@@ -2416,9 +2311,6 @@ export default function Dashboard() {
     commit(next);
   }
 
-  // Update a score by bracket and match ID rather than relying on a rendered
-  // bracket's captured array indexes. This keeps scoring independent for every
-  // bracket when multiple brackets are displayed on the same page.
   function updateBracketScore(
     bracketId: string,
     roundIndex: number,
@@ -2458,13 +2350,10 @@ export default function Dashboard() {
   }
 
   const latestNews = store.news[0];
-  // Profile and Change password sit in the account group instead of the section
-  // tabs, so the button that opened the current one is marked.
   const accountButtonClass = (key: string) =>
     tab === key
       ? "border-cyan-300/60 bg-cyan-300/15 text-cyan-100 hover:bg-cyan-300/20"
       : "border-white/20 bg-transparent text-white hover:bg-white/10";
-  // Keep older saved data working while allowing multiple Emergency Hotline entries.
   const summitItems: (SummitInfo & { id: string })[] =
     ((store as any).summits as (SummitInfo & { id: string })[] | undefined) ??
     (store.summit ? [{ ...store.summit, id: "legacy-summit" }] : []);
@@ -2481,7 +2370,6 @@ export default function Dashboard() {
       <div className="rcess-cornerglow pointer-events-none" aria-hidden="true" />
 
       <div className="relative z-10 mx-auto w-full max-w-[1500px] px-3 sm:px-5 md:px-8 lg:px-10 py-8 sm:py-10 md:py-12">
-        {/* Desktop account group + logout: upper-right */}
         <div className="hidden lg:flex items-center justify-end gap-2 mb-3">
           {role !== "guest" ? (
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2">
@@ -2585,13 +2473,9 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Mobile dropdown navigation (upper-left) */}
                     <Sheet
-                      // Pin the drawer open from the News step through the end of the
-                      // mobile tutorial, even if the drawer attempts to close itself.
                       open={mobileNavOpen || mobileTutorialMenuMustStayOpen}
                       onOpenChange={(open) => {
                         if (!open && mobileTutorialMenuMustStayOpen) return;
-                        // Don't allow the drawer to close during mobile tutorial mode.
-                        // Skip/Finish and going back to the intro close it explicitly.
                         if (!open && viewerTourOpen && mobileNavOpen) return;
                         setMobileNavOpen(open);
                       }}
@@ -2627,8 +2511,6 @@ export default function Dashboard() {
                                       data-tour-nav-item={TOUR_TAB_KEYS.includes(i.k) ? "true" : undefined}
                                       onSelect={() => {
                                         setTab(i.k);
-                                        // Don't collapse the dropdown when a viewer is
-                                        // following the tutorial; Next/Back controls the tour.
                                         if (!viewerTourOpen) setMobileNavOpen(false);
                                       }}
                                       className="text-white aria-selected:bg-white/10"
@@ -2680,7 +2562,6 @@ export default function Dashboard() {
                       </SheetContent>
                     </Sheet>
 
-                    <Badge className="bg-white/10 text-white border border-white/15 hover:bg-white/10">Portal</Badge>
 
                     {/* Desktop logout removed from here */}
                   </div>
@@ -2693,7 +2574,7 @@ export default function Dashboard() {
                       <div>
                         <div className="text-lg font-semibold">News and Announcements</div>
                         <div className="mt-1 text-sm text-white/50">
-                          Showing {Math.min(newsLimit, store.news.length)} of {store.news.length} · {NEWS_PAGE_SIZE} posts per page
+                          Showing {Math.min(newsLimit, store.news.length)} of {store.news.length}
                         </div>
                       </div>
                       {!isReadOnly ? (
@@ -2771,7 +2652,7 @@ export default function Dashboard() {
                       <div>
                         <div data-tour-target="feed" className="text-lg font-semibold">Photo Feed</div>
                         <div className="mt-1 text-sm text-white/50">
-                          Showing {feed.length} · {FEED_PAGE_SIZE} posts per page · only the admin can download
+                          Showing {feed.length} · {FEED_PAGE_SIZE}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -2929,9 +2810,6 @@ export default function Dashboard() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div data-tour-target="summit" className="text-lg font-semibold">Emergency Hotline</div>
-                        <div className="mt-1 text-sm text-white/50">
-                          Emergency contact numbers and service information.
-                        </div>
                       </div>
                       {!isReadOnly ? (
                         <Dialog>
@@ -3053,9 +2931,7 @@ export default function Dashboard() {
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div>
                         <div data-tour-target="schedule" className="text-lg font-semibold">Schedule</div>
-                        <div className="mt-1 text-sm text-white/55">
-                          Every game whose window is open right now. The time reads <span className="text-white/75">exactly as it was posted</span>, so it can cover a single hour or the whole day.
-                        </div>
+                       
                       </div>
 
                       {canEditSchedule ? (
@@ -3085,12 +2961,8 @@ export default function Dashboard() {
                       const now = new Date(scheduleNow);
 
                       const items = (store.schedule ?? [])
-                        // Editors keep the posts that sit outside their window, so
-                        // they can see what is queued; viewers only get what is live.
                         .filter((p) => canEditSchedule || scheduleIsVisible(p, now))
                         .slice()
-                        // The time is typed text now, so it cannot be compared as a
-                        // date: live posts lead and the rest keep posting order.
                         .sort(
                           (a, b) =>
                             Number(scheduleIsVisible(b, now)) - Number(scheduleIsVisible(a, now)) ||
@@ -3221,7 +3093,6 @@ export default function Dashboard() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div data-tour-target="map" className="text-lg font-semibold">Map</div>
-                        <div className="mt-2 text-sm text-white/55">Manage multiple named locations and display them together as pins.</div>
                       </div>
                       {!isReadOnly ? (
                         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -3254,8 +3125,6 @@ export default function Dashboard() {
                                 onSave={(v) => {
                                   commitIfMapAllowed({ ...store, map: v });
                                   setMapEditorOpen(false);
-                                  // The saved pins are listed straight away so the next
-                                  // change, or a deletion, is one tap away.
                                   setMapManagerOpen(true);
                                   toast.success("Map updated");
                                 }}
@@ -3410,7 +3279,6 @@ export default function Dashboard() {
                         .slice()
                         .sort((a, b) => b.points - a.points);
 
-                      // What the finished brackets are worth under the current award tables.
                       const payouts = payoutsForBrackets(store);
                       const previewOverall = leaderboardWithPayouts(store, payouts)
                         .filter((row) => (row.sport ?? "Overall") === "Overall")
@@ -3421,9 +3289,7 @@ export default function Dashboard() {
                           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                             <div>
                               <div data-tour-target="leaderboard" className="text-lg font-semibold">Leaderboard</div>
-                              <div className="mt-1 text-sm text-white/55">
-                                Switch between the <span className="text-white/75">Overall</span> scoreboard and the scoreboard of each event. Points come from the award tables you set in Settings and can be filled in by hand with Add row.
-                              </div>
+                              
 
                               <div className="mt-4 flex flex-wrap items-center gap-3">
                                 <div className="text-xs tracking-[0.18em] text-white/50">SCORE VIEW</div>
@@ -3757,9 +3623,7 @@ export default function Dashboard() {
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div>
                         <div data-tour-target="bracketing" className="text-lg font-semibold">Bracketing</div>
-                        <div className="mt-1 text-sm text-white/55">
-                          Choose a bracket format (single elimination or double elimination). Admins (or permitted roles) can edit match scores for single-elimination brackets.
-                        </div>
+                        
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                           <div className="text-xs tracking-[0.18em] text-white/50">EVENT</div>
@@ -3954,9 +3818,6 @@ export default function Dashboard() {
                                                   onChange={(e) => {
                                                     updateBracketScore(b.id, rIdx, m.id, sideKey, e.target.value);
                                                   }}
-                                                  // Keep score entry available in every bracket and round.
-                                                  // TBD slots may be scored before teams are advanced; winner
-                                                  // propagation still follows the selected Auto/Manual mode.
                                                   disabled={!canEditBrackets}
                                                   inputMode="numeric"
                                                   className="w-20 bg-black/30 border-white/15 text-white disabled:opacity-60"
@@ -4394,7 +4255,6 @@ export default function Dashboard() {
                           className="block max-w-full text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-300 file:px-4 file:py-2 file:text-black file:hover:bg-cyan-200 disabled:opacity-50"
                           onChange={(event) => {
                             handleAvatarPick(event.target.files?.[0]);
-                            // Let the same file be picked again after it was removed.
                             event.target.value = "";
                           }}
                         />
@@ -4453,7 +4313,6 @@ export default function Dashboard() {
                                 onPosted={() => {
                                   setProfileComposerOpen(false);
                                   setMyPostsTick((tick) => tick + 1);
-                                  // One post, two lists: the shared feed refreshes with it.
                                   setFeedReloadTick((tick) => tick + 1);
                                 }}
                               />
@@ -4960,7 +4819,6 @@ export default function Dashboard() {
                               toast("No permission to edit Settings");
                               return;
                             }
-                            // Save also persists permission rules
                             commit(store);
                             toast.success("Settings saved");
                           }}
