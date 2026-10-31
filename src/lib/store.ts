@@ -51,8 +51,8 @@ export type EventItem = {
   name: string;
   placements: EventPlacement[];
 
-  // Teams that entered and played but never won a match, and teams that were
-  // registered without ever taking the court.
+  // Teams that played without placing (medallists collect their award only),
+  // and teams that were registered without ever taking the court.
   entryPoints: number;
   noEntryPoints: number;
 };
@@ -501,13 +501,15 @@ function bracketPayout(bracket: Bracket, event: EventItem): PayoutRow[] {
     }
   }
 
-  // Entry is paid on top of a placement: a champion also entered. Teams listed
-  // in the bracket that never actually played take the no-entry score instead.
+  // A placed team collects its award only; entry points are reserved for teams
+  // that played without reaching a placement. Teams listed in the bracket that
+  // never actually played take the no-entry score instead.
   const roster = [...bracket.teams];
   for (const team of played) if (!roster.includes(team)) roster.push(team);
 
   for (const team of roster) {
     const entered = played.has(team);
+    if (entered && placed.has(team)) continue;
     const points = entered ? event.entryPoints : event.noEntryPoints;
     if (points) rows.push({ team, points, reason: entered ? "Entry" : "No entry" });
   }
