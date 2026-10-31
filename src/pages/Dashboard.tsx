@@ -688,9 +688,7 @@ function ScheduleEditor({ onSave }: { onSave: (p: MatchSchedulePost) => void }) 
           className="bg-black/30 border-white/15 text-white"
           placeholder="8:00 AM to 12:00 NN, then 1:00 PM to 5:00 PM"
         />
-        <div className="text-xs text-white/35">
-          Type the time exactly as viewers should read it — one hour or the whole day, in your own words.
-        </div>
+        
       </div>
 
       <div className="rounded-xl border border-white/10 bg-black/30 p-4">
@@ -774,6 +772,9 @@ function EventsEditor({
     value.length ? value : [{ id: nanoId(), name: "", events: [] }],
   );
   const [activeId, setActiveId] = useState<string>(() => focusId ?? value[0]?.id ?? "");
+  // Only one event shows its award table at a time, so a new event opens alone
+  // instead of pushing every existing event back into view.
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const active = categories.find((category) => category.id === activeId) ?? categories[0] ?? null;
 
@@ -781,11 +782,13 @@ function EventsEditor({
     const category: EventCategory = { id: nanoId(), name: "", events: [] };
     setCategories((current) => [...current, category]);
     setActiveId(category.id);
+    setEditingEventId(null);
   };
 
   const removeCategory = (id: string) => {
     const next = categories.filter((item) => item.id !== id);
     setCategories(next);
+    setEditingEventId(null);
     if (id === activeId) setActiveId(next[0]?.id ?? "");
   };
 
@@ -868,9 +871,9 @@ function EventsEditor({
   return (
     <div className="grid gap-4">
       <div className="text-xs leading-relaxed text-white/45">
-        Pick the category you want to work on and only its events appear below. Each event carries its own award
-        table, and those points are what Bracketing pays out and what the Leaderboard adds up, so the first
-        placement is the champion, then the runner-up, and so on.
+        Pick the category you want to work on and only its events appear below. Each event sits in its own row —
+        press Edit to open its award table and entry points. The award table is what Bracketing pays out and what
+        the Leaderboard adds up, so the first placement is the champion, then the runner-up, and so on.
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -883,7 +886,10 @@ function EventsEditor({
                 ? "bg-cyan-300 text-black hover:bg-cyan-200"
                 : "border border-white/20 bg-transparent text-white hover:bg-white/10"
             }
-            onClick={() => setActiveId(category.id)}
+            onClick={() => {
+              setActiveId(category.id);
+              setEditingEventId(null);
+            }}
           >
             {category.name.trim() || "New category"}
           </Button>
@@ -919,7 +925,41 @@ function EventsEditor({
             </Button>
           </div>
 
-          {category.events.map((event) => (
+          {category.events.map((event) => {
+            const isEditing = editingEventId === event.id;
+            const summary = [
+              ...event.placements.map(
+                (placement) => `${placement.label.trim() || "Placement"} ${placement.points}`,
+              ),
+              `Entry ${event.entryPoints}`,
+              `Without entry ${event.noEntryPoints}`,
+            ].join(" · ");
+
+            if (!isEditing) {
+              return (
+                <div
+                  key={event.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-white">
+                      {event.name.trim() || "New event"}
+                    </div>
+                    <div className="truncate text-xs text-white/40">{summary}</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-cyan-300/30 bg-cyan-300/10 text-cyan-100 hover:bg-cyan-300/20"
+                    onClick={() => setEditingEventId(event.id)}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
             <div key={event.id} className="grid gap-3 rounded-lg border border-white/10 bg-black/20 p-3">
               <div className="flex items-center gap-2">
                 <Input
@@ -1066,19 +1106,33 @@ function EventsEditor({
                   <div className="text-xs text-white/35">For a team registered for this event but absent.</div>
                 </div>
               </div>
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => setEditingEventId(null)}
+                >
+                  Done
+                </Button>
+              </div>
             </div>
-          ))}
+            );
+          })}
 
           <Button
             size="sm"
             variant="outline"
             className="w-fit border-cyan-300/30 bg-cyan-300/10 text-cyan-100 hover:bg-cyan-300/20"
-            onClick={() =>
+            onClick={() => {
+              const fresh = makeEvent("");
               patchCategory(category.id, (current) => ({
                 ...current,
-                events: [...current.events, makeEvent("")],
-              }))
-            }
+                events: [...current.events, fresh],
+              }));
+              setEditingEventId(fresh.id);
+            }}
           >
             Add event
           </Button>
@@ -3333,7 +3387,6 @@ export default function Dashboard() {
                                   </DialogHeader>
 
                                   <div className="grid gap-4">
-                                    
 
                                     {payouts.map((payout) => (
                                       <div key={payout.event} className="rounded-xl border border-white/10 bg-black/30 p-3">
