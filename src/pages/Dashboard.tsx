@@ -2744,7 +2744,7 @@ export default function Dashboard() {
                               <span>
                                 Posted by {post.postedBy || "unknown"} · {formatPosted(post.postedAtIso)} ·{" "}
                                 {post.imagePaths.length === 0
-                                  ? "caption only"
+                                  ? ""
                                   : `${post.imagePaths.length} ${post.imagePaths.length === 1 ? "picture" : "pictures"}`}
                               </span>
                               <span className="flex flex-wrap items-center justify-end gap-2">
