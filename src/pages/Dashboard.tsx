@@ -3333,14 +3333,7 @@ export default function Dashboard() {
                                   </DialogHeader>
 
                                   <div className="grid gap-4">
-                                    <div className="text-xs leading-relaxed text-white/45">
-                                      Each bracket is read against its event's award table in Settings: the winner of
-                                      the final takes the first placement, the loser the second, and the teams that
-                                      lost in the round before take the third. Placed teams collect their award only —
-                                      entry points go to teams that played without placing — and a team on the bracket
-                                      that never played takes the no-entry score. Applying replaces the score for that
-                                      team in that event and rebuilds the Overall view.
-                                    </div>
+                                    
 
                                     {payouts.map((payout) => (
                                       <div key={payout.event} className="rounded-xl border border-white/10 bg-black/30 p-3">
